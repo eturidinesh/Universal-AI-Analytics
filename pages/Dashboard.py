@@ -17,10 +17,6 @@ uploaded = st.session_state.get(
 
 if uploaded:
 
-    # ==========================
-    # LOAD DATA
-    # ==========================
-
     with st.spinner(
         "Analyzing dataset..."
     ):
@@ -29,7 +25,15 @@ if uploaded:
             uploaded
         )
 
-    df.columns=(
+        # Performance optimization
+        if len(df) > 5000:
+            df = df.sample(
+                5000,
+                random_state=42
+            )
+
+    # Clean columns
+    df.columns = (
         df.columns
         .str.strip()
         .str.replace(
@@ -38,12 +42,12 @@ if uploaded:
         )
     )
 
-    numeric=df.select_dtypes(
+    numeric = df.select_dtypes(
         include=np.number
     ).columns.tolist()
 
-    category=df.select_dtypes(
-        include=["object","string"]
+    category = df.select_dtypes(
+        include=["object", "string"]
     ).columns.tolist()
 
     # ==========================
@@ -54,38 +58,25 @@ if uploaded:
         "📈 Key Metrics"
     )
 
-    cols=st.columns(
-        min(
-            len(numeric),
-            4
-        )
-    )
+    if len(numeric) > 0:
 
-    for i,col in enumerate(
-        numeric[:4]
-    ):
-
-        cols[i].metric(
-            col,
-            f"{df[col].sum():,.2f}"
+        cols = st.columns(
+            min(
+                len(numeric),
+                4
+            )
         )
+
+        for i, col in enumerate(
+            numeric[:4]
+        ):
+
+            cols[i].metric(
+                col,
+                f"{df[col].mean():,.2f}"
+            )
 
     st.markdown("---")
-
-    # ==========================
-    # FILTERS
-    # ==========================
-
-    st.sidebar.subheader(
-        "Filters"
-    )
-
-    if category:
-
-        selected=st.sidebar.selectbox(
-            "Select Category",
-            category
-        )
 
     # ==========================
     # VISUAL ANALYTICS
@@ -97,24 +88,26 @@ if uploaded:
             "📊 Visual Analytics"
         )
 
-        left,right=st.columns(
-            2
-        )
+        left, right = st.columns(2)
 
-        chart=(
+        chart = (
             df.groupby(
                 category[0]
             )[numeric[0]]
-            .sum()
+            .mean()
+            .sort_values(
+                ascending=False
+            )
+            .head(10)
             .reset_index()
         )
 
-        fig1=px.bar(
+        fig1 = px.bar(
             chart,
             x=category[0],
             y=numeric[0],
-            title=f"{numeric[0]} by {category[0]}",
-            template="plotly_dark"
+            template="plotly_dark",
+            title=f"{numeric[0]} by {category[0]}"
         )
 
         left.plotly_chart(
@@ -122,11 +115,11 @@ if uploaded:
             width="stretch"
         )
 
-        fig2=px.pie(
+        fig2 = px.pie(
             chart,
             names=category[0],
             values=numeric[0],
-            hole=.5,
+            hole=0.5,
             template="plotly_dark"
         )
 
@@ -145,32 +138,30 @@ if uploaded:
         "🗺 Geographic Analysis"
     )
 
-    lat_col=None
-    lon_col=None
+    lat_col = None
+    lon_col = None
 
     for c in df.columns:
 
-        name=c.lower()
+        name = c.lower()
 
         if "lat" in name:
-
-            lat_col=c
+            lat_col = c
 
         elif "lon" in name or "long" in name:
-
-            lon_col=c
+            lon_col = c
 
     if lat_col and lon_col:
 
-        map_df=(
+        map_df = (
             df[
-                [lat_col,lon_col]
+                [lat_col, lon_col]
             ]
             .dropna()
             .rename(
                 columns={
-                    lat_col:"lat",
-                    lon_col:"lon"
+                    lat_col: "lat",
+                    lon_col: "lon"
                 }
             )
         )
@@ -182,7 +173,7 @@ if uploaded:
     else:
 
         st.info(
-            "No latitude/longitude columns found"
+            "No Latitude/Longitude columns found"
         )
 
     st.markdown("---")
@@ -197,21 +188,21 @@ if uploaded:
 
     if category and numeric:
 
-        selected_category=st.selectbox(
+        selected_category = st.selectbox(
             "Choose Category",
             category
         )
 
-        selected_metric=st.selectbox(
+        selected_metric = st.selectbox(
             "Choose Metric",
             numeric
         )
 
-        top=(
+        top = (
             df.groupby(
                 selected_category
             )[selected_metric]
-            .sum()
+            .mean()
             .sort_values(
                 ascending=False
             )
@@ -219,12 +210,11 @@ if uploaded:
             .reset_index()
         )
 
-        fig3=px.bar(
+        fig3 = px.bar(
             top,
             x=selected_metric,
             y=selected_category,
             orientation="h",
-            title=f"Top {selected_category}",
             template="plotly_dark"
         )
 
@@ -244,14 +234,12 @@ if uploaded:
     )
 
     st.dataframe(
-        df.head(
-            20
-        ),
+        df.head(20),
         width="stretch"
     )
 
 else:
 
     st.info(
-        "Upload dataset from sidebar"
+        "📂 Upload dataset from sidebar"
     )
