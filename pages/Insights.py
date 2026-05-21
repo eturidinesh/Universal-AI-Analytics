@@ -3,9 +3,16 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="Insights",
+    layout="wide"
+)
 
-st.title("🧠 AI Insights & Advanced Analytics")
+st.title("🧠 AI Insights")
+
+# ==========================
+# GET SHARED DATA
+# ==========================
 
 df = st.session_state.get(
     "df",
@@ -13,6 +20,12 @@ df = st.session_state.get(
 )
 
 if df is not None:
+
+    if len(df) > 5000:
+        df = df.sample(
+            n=5000,
+            random_state=42
+        )
 
     df.columns = (
         df.columns
@@ -28,137 +41,107 @@ if df is not None:
         include=["object","string"]
     ).columns.tolist()
 
-    # =========================
-    # BASIC AI INSIGHTS
-    # =========================
-
     st.subheader(
         "📊 Smart Insights"
     )
 
-    for col in numeric[:4]:
+    if len(numeric) > 0:
 
-        avg = df[col].mean()
-
-        maximum = df[col].max()
-
-        minimum = df[col].min()
-
-        st.success(
-            f"""
-{col}
-
-Average: {avg:,.2f}
-
-Highest: {maximum:,.2f}
-
-Lowest: {minimum:,.2f}
-"""
-        )
-
-    # =========================
-    # BEST CATEGORY
-    # =========================
-
-    if len(category)>0 and len(numeric)>0:
-
-        top = (
-            df.groupby(
-                category[0]
-            )[numeric[0]]
-            .sum()
-            .sort_values(
-                ascending=False
+        cols = st.columns(
+            min(
+                len(numeric),
+                4
             )
         )
 
-        st.info(
-            f"""
-🏆 Best {category[0]}:
+        for i,col in enumerate(
+            numeric[:4]
+        ):
 
-{top.index[0]}
+            avg = round(
+                df[col].mean(),
+                2
+            )
 
-Value:
+            maxv = round(
+                df[col].max(),
+                2
+            )
 
-{top.iloc[0]:,.2f}
-"""
-        )
+            cols[i].metric(
+                col,
+                avg,
+                f"Max: {maxv}"
+            )
 
     st.markdown("---")
 
-    # =========================
+    # ==========================
     # CORRELATION HEATMAP
-    # =========================
+    # ==========================
 
-    if len(numeric)>1:
+    if len(numeric) > 1:
 
         st.subheader(
             "🔥 Correlation Heatmap"
         )
 
-        corr = df[numeric].corr()
+        corr = df[
+            numeric
+        ].corr()
 
         fig = px.imshow(
             corr,
             text_auto=True,
-            color_continuous_scale="RdBu",
-            title="Feature Relationships"
+            template="plotly_dark"
         )
 
         st.plotly_chart(
             fig,
-            width="stretch"
+            use_container_width=True
         )
 
     st.markdown("---")
 
-    # =========================
-    # ANOMALY DETECTION
-    # =========================
+    # ==========================
+    # OUTLIER DETECTION
+    # ==========================
 
-    st.subheader(
-        "⚠ Anomaly Detection"
-    )
+    if len(numeric)>0:
 
-    target = st.selectbox(
-        "Select Column",
-        numeric
-    )
+        st.subheader(
+            "⚠ Outlier Detection"
+        )
 
-    mean = df[target].mean()
+        selected = st.selectbox(
+            "Select Numeric Column",
+            numeric
+        )
 
-    std = df[target].std()
-
-    anomalies = df[
-        abs(
-            df[target]-mean
-        ) > 2*std
-    ]
-
-    st.metric(
-        "Anomalies Found",
-        len(anomalies)
-    )
-
-    if len(anomalies)>0:
-
-        fig2 = px.scatter(
+        fig2 = px.box(
             df,
-            y=target,
-            title=f"Anomalies in {target}"
+            y=selected,
+            template="plotly_dark"
         )
 
         st.plotly_chart(
             fig2,
-            width="stretch"
+            use_container_width=True
         )
 
-        st.dataframe(
-            anomalies.head(10)
-        )
+    st.markdown("---")
+
+    st.subheader(
+        "📋 Dataset Preview"
+    )
+
+    st.dataframe(
+        df.head(20),
+        use_container_width=True
+    )
 
 else:
 
     st.info(
-        "Upload dataset from sidebar"
+        "📂 Upload dataset from sidebar"
     )

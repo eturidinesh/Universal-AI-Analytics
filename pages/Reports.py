@@ -1,17 +1,24 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import io
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
     Spacer
 )
 from reportlab.lib import styles
-import io
 
-st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="Reports",
+    layout="wide"
+)
 
-st.title("📄 Analytics Reports")
+st.title("📄 Reports")
+
+# ==========================
+# GET SHARED DATA
+# ==========================
 
 df = st.session_state.get(
     "df",
@@ -20,55 +27,84 @@ df = st.session_state.get(
 
 if df is not None:
 
-    df.columns=(
+    if len(df) > 5000:
+
+        df = df.sample(
+            n=5000,
+            random_state=42
+        )
+
+    df.columns = (
         df.columns
         .str.strip()
-        .str.replace(" ","_")
+        .str.replace(
+            " ",
+            "_"
+        )
     )
 
-    numeric=df.select_dtypes(
+    numeric = df.select_dtypes(
         include=np.number
     ).columns.tolist()
 
     st.subheader(
-        "Summary Report"
+        "📊 Summary Metrics"
     )
 
-    for col in numeric[:4]:
+    if len(numeric)>0:
 
-        st.metric(
-            col,
-            f"{df[col].sum():,.2f}"
+        cols = st.columns(
+            min(
+                len(numeric),
+                4
+            )
         )
 
-    # CSV download
+        for i,col in enumerate(
+            numeric[:4]
+        ):
 
-    csv=df.to_csv(
+            cols[i].metric(
+                col,
+                f"{df[col].mean():,.2f}"
+            )
+
+    st.markdown("---")
+
+    # ==========================
+    # CSV DOWNLOAD
+    # ==========================
+
+    csv = df.to_csv(
         index=False
     )
 
     st.download_button(
         "⬇ Download CSV",
         csv,
-        "report.csv",
+        "dataset.csv",
         "text/csv"
     )
 
-    # PDF generation
+    # ==========================
+    # PDF REPORT
+    # ==========================
 
-    buffer=io.BytesIO()
+    buffer = io.BytesIO()
 
-    doc=SimpleDocTemplate(
+    doc = SimpleDocTemplate(
         buffer
     )
 
-    style=styles.getSampleStyleSheet()
+    style = (
+        styles.getSampleStyleSheet()
+    )
 
-    content=[]
+    content = []
 
     content.append(
         Paragraph(
-            "Analytics Report",
+            "Universal AI Analytics Report",
             style["Title"]
         )
     )
@@ -80,12 +116,12 @@ if df is not None:
         )
     )
 
-    for col in numeric[:4]:
+    for col in numeric[:5]:
 
         content.append(
 
             Paragraph(
-                f"{col}: {df[col].sum():,.2f}",
+                f"{col} Average: {df[col].mean():,.2f}",
                 style["Normal"]
             )
 
@@ -95,17 +131,28 @@ if df is not None:
         content
     )
 
-    pdf=buffer.getvalue()
+    pdf = buffer.getvalue()
 
     st.download_button(
-        "📄 Download PDF",
+        "📄 Download PDF Report",
         pdf,
         "analytics_report.pdf",
         "application/pdf"
     )
 
+    st.markdown("---")
+
+    st.subheader(
+        "📋 Data Preview"
+    )
+
+    st.dataframe(
+        df.head(20),
+        use_container_width=True
+    )
+
 else:
 
     st.info(
-        "Upload dataset from sidebar"
+        "📂 Upload dataset from sidebar"
     )

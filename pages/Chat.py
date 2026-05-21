@@ -2,9 +2,16 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="Chat with Data",
+    layout="wide"
+)
 
 st.title("💬 Chat With Data")
+
+# ==========================
+# GET SHARED DATA
+# ==========================
 
 df = st.session_state.get(
     "df",
@@ -13,10 +20,20 @@ df = st.session_state.get(
 
 if df is not None:
 
+    if len(df) > 5000:
+
+        df = df.sample(
+            n=5000,
+            random_state=42
+        )
+
     df.columns = (
         df.columns
         .str.strip()
-        .str.replace(" ","_")
+        .str.replace(
+            " ",
+            "_"
+        )
     )
 
     numeric = df.select_dtypes(
@@ -27,15 +44,26 @@ if df is not None:
         include=["object","string"]
     ).columns.tolist()
 
+    st.markdown("""
+Ask things like:
+
+- total sales
+- average profit
+- highest category
+- number of rows
+""")
+
     question = st.text_input(
-        "Ask about your data"
+        "Ask a question"
     )
 
     if question:
 
         q = question.lower()
 
-        # total
+        answered = False
+
+        # Total
         if "total" in q:
 
             for col in numeric:
@@ -46,7 +74,9 @@ if df is not None:
                         f"Total {col}: {df[col].sum():,.2f}"
                     )
 
-        # average
+                    answered = True
+
+        # Average
         elif "average" in q:
 
             for col in numeric:
@@ -57,16 +87,18 @@ if df is not None:
                         f"Average {col}: {df[col].mean():,.2f}"
                     )
 
-        # highest
+                    answered = True
+
+        # Highest category
         elif "highest" in q:
 
-            if len(category)>0 and len(numeric)>0:
+            if category and numeric:
 
                 top = (
                     df.groupby(
                         category[0]
                     )[numeric[0]]
-                    .sum()
+                    .mean()
                     .sort_values(
                         ascending=False
                     )
@@ -74,23 +106,35 @@ if df is not None:
 
                 st.success(
                     f"""
-Top {category[0]}:
+Highest {category[0]}:
 
 {top.index[0]}
 
 Value:
+
 {top.iloc[0]:,.2f}
 """
                 )
 
-        else:
+                answered = True
+
+        # Rows
+        elif "rows" in q:
+
+            st.success(
+                f"Dataset contains {len(df):,} rows"
+            )
+
+            answered = True
+
+        if not answered:
 
             st.warning(
-                "Question not understood"
+                "Question not recognized"
             )
 
 else:
 
     st.info(
-        "Upload dataset from sidebar"
+        "📂 Upload dataset from sidebar"
     )

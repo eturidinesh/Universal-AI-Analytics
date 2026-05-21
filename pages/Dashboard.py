@@ -11,25 +11,25 @@ st.set_page_config(
 st.title("📊 Universal Analytics Dashboard")
 
 # ==========================
-# GET SHARED DATA
+# GET DATA
 # ==========================
 
 df = st.session_state.get("df", None)
 
 if df is not None:
 
-    # Performance optimization
+    # optimize performance
     if len(df) > 5000:
         df = df.sample(
             n=5000,
             random_state=42
         )
 
-    # Clean columns
+    # clean columns
     df.columns = (
         df.columns
         .str.strip()
-        .str.replace(" ", "_")
+        .str.replace(" ","_")
     )
 
     numeric = df.select_dtypes(
@@ -37,28 +37,33 @@ if df is not None:
     ).columns.tolist()
 
     category = df.select_dtypes(
-        include=["object", "string"]
+        include=["object","string"]
     ).columns.tolist()
 
     # ==========================
-    # KPI SECTION
+    # KPI CARDS
     # ==========================
 
     st.subheader("📈 Key Metrics")
 
-    if len(numeric) > 0:
+    if len(numeric)>0:
 
         cols = st.columns(
-            min(4, len(numeric))
+            min(4,len(numeric))
         )
 
-        for i, col in enumerate(
+        for i,col in enumerate(
             numeric[:4]
         ):
 
+            value = round(
+                df[col].mean(),
+                2
+            )
+
             cols[i].metric(
-                col,
-                f"{df[col].mean():,.2f}"
+                label=col,
+                value=f"{value:,}"
             )
 
     st.markdown("---")
@@ -67,15 +72,15 @@ if df is not None:
     # VISUAL ANALYTICS
     # ==========================
 
-    if category and numeric:
+    if len(category)>0 and len(numeric)>0:
 
         st.subheader(
             "📊 Visual Analytics"
         )
 
-        left, right = st.columns(2)
+        left,right = st.columns(2)
 
-        chart = (
+        grouped = (
             df.groupby(
                 category[0]
             )[numeric[0]]
@@ -88,20 +93,20 @@ if df is not None:
         )
 
         fig1 = px.bar(
-            chart,
+            grouped,
             x=category[0],
             y=numeric[0],
-            template="plotly_dark",
-            title=f"{numeric[0]} by {category[0]}"
+            title=f"{numeric[0]} by {category[0]}",
+            template="plotly_dark"
         )
 
         left.plotly_chart(
             fig1,
-            width="stretch"
+            use_container_width=True
         )
 
         fig2 = px.pie(
-            chart,
+            grouped,
             names=category[0],
             values=numeric[0],
             hole=0.5,
@@ -110,53 +115,7 @@ if df is not None:
 
         right.plotly_chart(
             fig2,
-            width="stretch"
-        )
-
-    st.markdown("---")
-
-    # ==========================
-    # MAP SECTION
-    # ==========================
-
-    st.subheader(
-        "🗺 Geographic Analysis"
-    )
-
-    lat_col = None
-    lon_col = None
-
-    for c in df.columns:
-
-        col = c.lower()
-
-        if "lat" in col:
-            lat_col = c
-
-        elif "lon" in col or "long" in col:
-            lon_col = c
-
-    if lat_col and lon_col:
-
-        map_df = (
-            df[
-                [lat_col, lon_col]
-            ]
-            .dropna()
-            .rename(
-                columns={
-                    lat_col: "lat",
-                    lon_col: "lon"
-                }
-            )
-        )
-
-        st.map(map_df)
-
-    else:
-
-        st.info(
-            "No geographic columns detected"
+            use_container_width=True
         )
 
     st.markdown("---")
@@ -165,23 +124,23 @@ if df is not None:
     # TOP PERFORMERS
     # ==========================
 
-    st.subheader(
-        "🏆 Top Performers"
-    )
+    if len(category)>0 and len(numeric)>0:
 
-    if category and numeric:
+        st.subheader(
+            "🏆 Top Analysis"
+        )
 
-        selected_category = st.selectbox(
+        selected_category=st.selectbox(
             "Choose Category",
             category
         )
 
-        selected_metric = st.selectbox(
+        selected_metric=st.selectbox(
             "Choose Metric",
             numeric
         )
 
-        top = (
+        top=(
             df.groupby(
                 selected_category
             )[selected_metric]
@@ -193,7 +152,7 @@ if df is not None:
             .reset_index()
         )
 
-        fig3 = px.bar(
+        fig3=px.bar(
             top,
             x=selected_metric,
             y=selected_category,
@@ -203,14 +162,56 @@ if df is not None:
 
         st.plotly_chart(
             fig3,
-            width="stretch"
+            use_container_width=True
         )
 
     st.markdown("---")
 
     # ==========================
-    # DATA PREVIEW
+    # MAP ANALYSIS
     # ==========================
+
+    st.subheader(
+        "🗺 Geographic Analysis"
+    )
+
+    lat=None
+    lon=None
+
+    for c in df.columns:
+
+        name=c.lower()
+
+        if "lat" in name:
+            lat=c
+
+        if "lon" in name or "long" in name:
+            lon=c
+
+    if lat and lon:
+
+        map_df=(
+            df[[lat,lon]]
+            .dropna()
+            .rename(
+                columns={
+                    lat:"lat",
+                    lon:"lon"
+                }
+            )
+        )
+
+        st.map(
+            map_df
+        )
+
+    else:
+
+        st.info(
+            "No latitude/longitude columns found"
+        )
+
+    st.markdown("---")
 
     st.subheader(
         "📋 Dataset Preview"
@@ -218,7 +219,7 @@ if df is not None:
 
     st.dataframe(
         df.head(20),
-        width="stretch"
+        use_container_width=True
     )
 
 else:
