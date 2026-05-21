@@ -1,216 +1,228 @@
 import streamlit as st
+import pandas as pd
+import plotly.express as px
+import numpy as np
 
 st.set_page_config(
-    page_title="Universal AI Analytics",
-    page_icon="🚀",
+    page_title="Dashboard",
     layout="wide"
 )
 
-# ======================
-# SIDEBAR
-# ======================
+st.title("📊 Universal Analytics Dashboard")
 
-st.sidebar.image(
-    "assets/logo.png",
-    width=150
-)
+# ==========================
+# GET SHARED DATA
+# ==========================
 
-st.sidebar.markdown(
-"""
-# 🚀 Universal AI Analytics
+df = st.session_state.get("df", None)
 
-Smart AI-powered data analysis platform
-"""
-)
+if df is not None:
 
-st.sidebar.markdown("---")
+    # Performance optimization
+    if len(df) > 5000:
+        df = df.sample(
+            n=5000,
+            random_state=42
+        )
 
-st.sidebar.success(
-    "Upload datasets and explore insights"
-)
-
-# ======================
-# FILE UPLOAD
-# ======================
-
-import pandas as pd
-
-uploaded_file = st.sidebar.file_uploader(
-    "📂 Upload CSV Dataset",
-    type=["csv"]
-)
-
-if uploaded_file is not None:
-
-    df = pd.read_csv(uploaded_file)
-
-    st.session_state["df"] = df
-
-    st.sidebar.success(
-        "Dataset uploaded successfully"
+    # Clean columns
+    df.columns = (
+        df.columns
+        .str.strip()
+        .str.replace(" ", "_")
     )
 
-st.sidebar.markdown("---")
+    numeric = df.select_dtypes(
+        include=np.number
+    ).columns.tolist()
 
-st.sidebar.info(
-"""
-Supported:
+    category = df.select_dtypes(
+        include=["object", "string"]
+    ).columns.tolist()
 
-✅ E-commerce  
-✅ Finance  
-✅ Employee  
-✅ Hospital  
-✅ Student  
-✅ Any CSV
-"""
-)
+    # ==========================
+    # KPI SECTION
+    # ==========================
 
-# ======================
-# HOME PAGE
-# ======================
+    st.subheader("📈 Key Metrics")
 
-st.markdown(
-"""
-<style>
+    if len(numeric) > 0:
 
-.hero{
-padding:35px;
-border-radius:25px;
-background:linear-gradient(
-90deg,
-#0f172a,
-#4c1d95,
-#7e22ce
-);
-text-align:center;
-margin-bottom:25px;
-box-shadow:0px 0px 30px rgba(139,92,246,.5);
-}
+        cols = st.columns(
+            min(4, len(numeric))
+        )
 
-.big{
-font-size:50px;
-font-weight:bold;
-color:white;
-}
+        for i, col in enumerate(
+            numeric[:4]
+        ):
 
-.small{
-font-size:22px;
-color:#d1d5db;
-}
+            cols[i].metric(
+                col,
+                f"{df[col].mean():,.2f}"
+            )
 
-.card{
-padding:25px;
-border-radius:20px;
-background:#111827;
-border:1px solid #374151;
-text-align:center;
-height:150px;
-}
+    st.markdown("---")
 
-</style>
-""",
-unsafe_allow_html=True
-)
+    # ==========================
+    # VISUAL ANALYTICS
+    # ==========================
 
-st.markdown(
-"""
-<div class="hero">
+    if category and numeric:
 
-<div class="big">
-🚀 Universal AI Analytics
-</div>
+        st.subheader(
+            "📊 Visual Analytics"
+        )
 
-<div class="small">
-AI Powered Analytics Platform
-</div>
+        left, right = st.columns(2)
 
-</div>
-""",
-unsafe_allow_html=True
-)
+        chart = (
+            df.groupby(
+                category[0]
+            )[numeric[0]]
+            .mean()
+            .sort_values(
+                ascending=False
+            )
+            .head(10)
+            .reset_index()
+        )
 
-st.markdown("## Features")
+        fig1 = px.bar(
+            chart,
+            x=category[0],
+            y=numeric[0],
+            template="plotly_dark",
+            title=f"{numeric[0]} by {category[0]}"
+        )
 
-c1,c2,c3 = st.columns(3)
+        left.plotly_chart(
+            fig1,
+            width="stretch"
+        )
 
-with c1:
-    st.markdown(
-"""
-<div class="card">
-<h3>📊 Dashboard</h3>
-Dynamic KPI charts and metrics
-</div>
-""",
-unsafe_allow_html=True
-)
+        fig2 = px.pie(
+            chart,
+            names=category[0],
+            values=numeric[0],
+            hole=0.5,
+            template="plotly_dark"
+        )
 
-with c2:
-    st.markdown(
-"""
-<div class="card">
-<h3>🔮 Forecasting</h3>
-ML prediction engine
-</div>
-""",
-unsafe_allow_html=True
-)
+        right.plotly_chart(
+            fig2,
+            width="stretch"
+        )
 
-with c3:
-    st.markdown(
-"""
-<div class="card">
-<h3>🧠 AI Insights</h3>
-Smart recommendations
-</div>
-""",
-unsafe_allow_html=True
-)
+    st.markdown("---")
 
-c4,c5,c6 = st.columns(3)
+    # ==========================
+    # MAP SECTION
+    # ==========================
 
-with c4:
-    st.markdown(
-"""
-<div class="card">
-<h3>💬 Chat with Data</h3>
-Ask questions naturally
-</div>
-""",
-unsafe_allow_html=True
-)
+    st.subheader(
+        "🗺 Geographic Analysis"
+    )
 
-with c5:
-    st.markdown(
-"""
-<div class="card">
-<h3>📄 Reports</h3>
-Generate PDF reports
-</div>
-""",
-unsafe_allow_html=True
-)
+    lat_col = None
+    lon_col = None
 
-with c6:
-    st.markdown(
-"""
-<div class="card">
-<h3>🗺 Maps</h3>
-Interactive geographic analysis
-</div>
-""",
-unsafe_allow_html=True
-)
+    for c in df.columns:
 
-st.markdown("---")
+        col = c.lower()
 
-st.success(
-"""
-Upload your dataset from the sidebar and explore:
+        if "lat" in col:
+            lat_col = c
 
-📊 Dashboard  
-🔮 Forecast  
-🧠 Insights  
-💬 Chat with Data  
-📄 Reports  
-"""
-)
+        elif "lon" in col or "long" in col:
+            lon_col = c
+
+    if lat_col and lon_col:
+
+        map_df = (
+            df[
+                [lat_col, lon_col]
+            ]
+            .dropna()
+            .rename(
+                columns={
+                    lat_col: "lat",
+                    lon_col: "lon"
+                }
+            )
+        )
+
+        st.map(map_df)
+
+    else:
+
+        st.info(
+            "No geographic columns detected"
+        )
+
+    st.markdown("---")
+
+    # ==========================
+    # TOP PERFORMERS
+    # ==========================
+
+    st.subheader(
+        "🏆 Top Performers"
+    )
+
+    if category and numeric:
+
+        selected_category = st.selectbox(
+            "Choose Category",
+            category
+        )
+
+        selected_metric = st.selectbox(
+            "Choose Metric",
+            numeric
+        )
+
+        top = (
+            df.groupby(
+                selected_category
+            )[selected_metric]
+            .mean()
+            .sort_values(
+                ascending=False
+            )
+            .head(10)
+            .reset_index()
+        )
+
+        fig3 = px.bar(
+            top,
+            x=selected_metric,
+            y=selected_category,
+            orientation="h",
+            template="plotly_dark"
+        )
+
+        st.plotly_chart(
+            fig3,
+            width="stretch"
+        )
+
+    st.markdown("---")
+
+    # ==========================
+    # DATA PREVIEW
+    # ==========================
+
+    st.subheader(
+        "📋 Dataset Preview"
+    )
+
+    st.dataframe(
+        df.head(20),
+        width="stretch"
+    )
+
+else:
+
+    st.info(
+        "📂 Upload a dataset from sidebar"
+    )

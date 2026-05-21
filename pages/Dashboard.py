@@ -10,36 +10,26 @@ st.set_page_config(
 
 st.title("📊 Universal Analytics Dashboard")
 
-df = st.session_state.get(
-    "df",
-    None
-)
+# ==========================
+# GET SHARED DATA
+# ==========================
+
+df = st.session_state.get("df", None)
 
 if df is not None:
 
-    with st.spinner(
-        "Analyzing dataset..."
-    ):
-
-        df = pd.read_csv(
-            uploaded
+    # Performance optimization
+    if len(df) > 5000:
+        df = df.sample(
+            n=5000,
+            random_state=42
         )
-
-        # Performance optimization
-        if len(df) > 5000:
-            df = df.sample(
-                5000,
-                random_state=42
-            )
 
     # Clean columns
     df.columns = (
         df.columns
         .str.strip()
-        .str.replace(
-            " ",
-            "_"
-        )
+        .str.replace(" ", "_")
     )
 
     numeric = df.select_dtypes(
@@ -54,17 +44,12 @@ if df is not None:
     # KPI SECTION
     # ==========================
 
-    st.subheader(
-        "📈 Key Metrics"
-    )
+    st.subheader("📈 Key Metrics")
 
     if len(numeric) > 0:
 
         cols = st.columns(
-            min(
-                len(numeric),
-                4
-            )
+            min(4, len(numeric))
         )
 
         for i, col in enumerate(
@@ -143,12 +128,12 @@ if df is not None:
 
     for c in df.columns:
 
-        name = c.lower()
+        col = c.lower()
 
-        if "lat" in name:
+        if "lat" in col:
             lat_col = c
 
-        elif "lon" in name or "long" in name:
+        elif "lon" in col or "long" in col:
             lon_col = c
 
     if lat_col and lon_col:
@@ -166,14 +151,12 @@ if df is not None:
             )
         )
 
-        st.map(
-            map_df
-        )
+        st.map(map_df)
 
     else:
 
         st.info(
-            "No Latitude/Longitude columns found"
+            "No geographic columns detected"
         )
 
     st.markdown("---")
@@ -241,5 +224,5 @@ if df is not None:
 else:
 
     st.info(
-        "📂 Upload dataset from sidebar"
+        "📂 Upload a dataset from sidebar"
     )
