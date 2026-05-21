@@ -33,13 +33,22 @@ st.sidebar.success(
 # FILE UPLOAD
 # ======================
 
+import pandas as pd
+
 uploaded_file = st.sidebar.file_uploader(
     "📂 Upload CSV Dataset",
     type=["csv"]
 )
 
 if uploaded_file is not None:
-    st.session_state["uploaded_file"] = uploaded_file
+
+    df = pd.read_csv(uploaded_file)
+
+    st.session_state["df"] = df
+
+    st.sidebar.success(
+        "Dataset uploaded successfully"
+    )
 
 st.sidebar.markdown("---")
 

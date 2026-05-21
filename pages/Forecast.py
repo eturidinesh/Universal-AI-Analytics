@@ -8,14 +8,12 @@ st.set_page_config(layout="wide")
 
 st.title("🔮 Forecast Analytics")
 
-uploaded = st.session_state.get(
-    "uploaded_file",
+df = st.session_state.get(
+    "df",
     None
 )
 
-if uploaded:
-
-    df = pd.read_csv(uploaded)
+if df is not None:
 
     df.columns = (
         df.columns

@@ -10,12 +10,12 @@ st.set_page_config(
 
 st.title("📊 Universal Analytics Dashboard")
 
-uploaded = st.session_state.get(
-    "uploaded_file",
+df = st.session_state.get(
+    "df",
     None
 )
 
-if uploaded:
+if df is not None:
 
     with st.spinner(
         "Analyzing dataset..."
