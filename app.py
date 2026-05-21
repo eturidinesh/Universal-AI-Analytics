@@ -6,21 +6,21 @@ st.set_page_config(
     layout="wide"
 )
 
-# ==========================
+# ======================
 # SIDEBAR
-# ==========================
+# ======================
 
 st.sidebar.image(
     "assets/logo.png",
-    width=180
+    width=150
 )
 
 st.sidebar.markdown(
-    """
-    # 🚀 Universal AI Analytics
-    
-    Smart AI-powered data analysis platform
-    """
+"""
+# 🚀 Universal AI Analytics
+
+Smart AI-powered data analysis platform
+"""
 )
 
 st.sidebar.markdown("---")
@@ -29,9 +29,36 @@ st.sidebar.success(
     "Upload datasets and explore insights"
 )
 
-# ==========================
+# ======================
+# FILE UPLOAD
+# ======================
+
+uploaded_file = st.sidebar.file_uploader(
+    "📂 Upload CSV Dataset",
+    type=["csv"]
+)
+
+if uploaded_file is not None:
+    st.session_state["uploaded_file"] = uploaded_file
+
+st.sidebar.markdown("---")
+
+st.sidebar.info(
+"""
+Supported:
+
+✅ E-commerce  
+✅ Finance  
+✅ Employee  
+✅ Hospital  
+✅ Student  
+✅ Any CSV
+"""
+)
+
+# ======================
 # HOME PAGE
-# ==========================
+# ======================
 
 st.markdown(
 """
@@ -68,6 +95,7 @@ border-radius:20px;
 background:#111827;
 border:1px solid #374151;
 text-align:center;
+height:150px;
 }
 
 </style>
@@ -94,12 +122,11 @@ unsafe_allow_html=True
 
 st.markdown("## Features")
 
-c1,c2,c3=st.columns(3)
+c1,c2,c3 = st.columns(3)
 
 with c1:
-
     st.markdown(
-    """
+"""
 <div class="card">
 <h3>📊 Dashboard</h3>
 Dynamic KPI charts and metrics
@@ -109,21 +136,19 @@ unsafe_allow_html=True
 )
 
 with c2:
-
     st.markdown(
-    """
+"""
 <div class="card">
 <h3>🔮 Forecasting</h3>
-ML-based prediction engine
+ML prediction engine
 </div>
 """,
 unsafe_allow_html=True
 )
 
 with c3:
-
     st.markdown(
-    """
+"""
 <div class="card">
 <h3>🧠 AI Insights</h3>
 Smart recommendations
@@ -132,14 +157,11 @@ Smart recommendations
 unsafe_allow_html=True
 )
 
-st.markdown("---")
-
-c4,c5,c6=st.columns(3)
+c4,c5,c6 = st.columns(3)
 
 with c4:
-
     st.markdown(
-    """
+"""
 <div class="card">
 <h3>💬 Chat with Data</h3>
 Ask questions naturally
@@ -149,9 +171,8 @@ unsafe_allow_html=True
 )
 
 with c5:
-
     st.markdown(
-    """
+"""
 <div class="card">
 <h3>📄 Reports</h3>
 Generate PDF reports
@@ -161,9 +182,8 @@ unsafe_allow_html=True
 )
 
 with c6:
-
     st.markdown(
-    """
+"""
 <div class="card">
 <h3>🗺 Maps</h3>
 Interactive geographic analysis
@@ -176,12 +196,12 @@ st.markdown("---")
 
 st.success(
 """
-✅ Upload a CSV from the sidebar and navigate using:
+Upload your dataset from the sidebar and explore:
 
 📊 Dashboard  
 🔮 Forecast  
 🧠 Insights  
-💬 Chat  
-📄 Reports
+💬 Chat with Data  
+📄 Reports  
 """
 )

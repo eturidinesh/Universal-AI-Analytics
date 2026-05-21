@@ -13,9 +13,9 @@ st.set_page_config(layout="wide")
 
 st.title("📄 Analytics Reports")
 
-uploaded = st.sidebar.file_uploader(
-    "Upload Dataset",
-    type=["csv"]
+uploaded = st.session_state.get(
+    "uploaded_file",
+    None
 )
 
 if uploaded:

@@ -7,9 +7,9 @@ st.set_page_config(layout="wide")
 
 st.title("🧠 AI Insights & Advanced Analytics")
 
-uploaded = st.sidebar.file_uploader(
-    "Upload Dataset",
-    type=["csv"]
+uploaded = st.session_state.get(
+    "uploaded_file",
+    None
 )
 
 if uploaded:
